@@ -1,0 +1,1 @@
+{"version":3,"file":"sendMailUtils.js","sourceRoot":"","sources":["../../src/utils/sendMailUtils.ts"],"names":[],"mappings":"AAAA,OAAO,UAAU,MAAM,YAAY,CAAC;AACpC,MAAM,CAAC,MAAM,WAAW,GAAG,UAAU,CAAC,eAAe,CAAC;IAClD,OAAO,EAAE,OAAO;IAChB,IAAI,EAAE;QACJ,IAAI,EAAE,qBAAqB;QAC3B,IAAI,EAAE,qBAAqB;KAC5B;CACF,CAAC,CAAC"}
