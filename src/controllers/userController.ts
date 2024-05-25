@@ -1,9 +1,8 @@
 import { StatusCodes } from "http-status-codes";
 import { UnauthenticatedError } from "../errors/customErrors.js";
+import { MiddlewareFn } from "../interfaces/expresstype.js";
 import userModel from "../models/userModel.js";
 import { sanitizeUser } from "../utils/tokenUtils.js";
-import { MiddlewareFn } from "../interfaces/expresstype.js";
-import { Request, Response } from "express";
 // import logisticModel from "../models/logisticModel.js";
 
 export const currentUser: MiddlewareFn = async (req, res) => {
@@ -18,13 +17,11 @@ export const currentUser: MiddlewareFn = async (req, res) => {
   // console.log("this is the login user", Iuser, user);
   res.status(StatusCodes.OK).json({ user: Iuser });
 };
-export const getAllUser: MiddlewareFn = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { search } = req.query;
+export const getAllUser: MiddlewareFn = async (req, res): Promise<void> => {
+  const { search, role } = req.query;
 
   const queryObject: any = {};
+  console.log("this is the search value ", search);
   if (search) {
     const userSearch = [
       {
@@ -38,15 +35,28 @@ export const getAllUser: MiddlewareFn = async (
 
     queryObject.$or = [...userSearch];
   }
-  const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 20;
-  const skip = (page - 1) * limit;
+  if (role) {
+    queryObject.$or = [
+      {
+        role: { $regex: role, $options: "i" }
+      }
+    ];
+  
+  }
+
+  const { limit, nPages, page, skip } = req.pagination;
+  // const page = Number(req.query.page) || 1;
+  // const limit = Number(req.query.limit) || 20;
+  // const skip = (page - 1) * limit;
   // testing
+
   const totalUsers = await userModel.countDocuments(queryObject);
-const allLogististics=8
+  const allLogististics = 8;
   const users = await userModel.aggregate([
     {
-      $match: {},
+      $match: {
+        ...queryObject,
+      },
     },
     {
       $lookup: {
@@ -81,7 +91,7 @@ const allLogististics=8
             0,
             {
               $multiply: [
-                { $divide: [100, allLogististics ] },
+                { $divide: [100, allLogististics] },
                 { $size: "$allusers" },
               ],
             },
@@ -120,7 +130,9 @@ const allLogististics=8
   //   })
   //   .skip(skip)
   //   .limit(limit);
-  const numberOfPage = Math.ceil(totalUsers / limit);
+  const numberOfPage = nPages(totalUsers)
+  
+  // Math.ceil(totalUsers / limit);
 
   res.status(200).json({ users, numberOfPage, limit, currentPage: page });
 };

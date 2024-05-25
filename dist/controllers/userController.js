@@ -17,8 +17,9 @@ export const currentUser = async (req, res) => {
     res.status(StatusCodes.OK).json({ user: Iuser });
 };
 export const getAllUser = async (req, res) => {
-    const { search } = req.query;
+    const { search, role } = req.query;
     const queryObject = {};
+    console.log("this is the search value ", search);
     if (search) {
         const userSearch = [
             {
@@ -31,15 +32,25 @@ export const getAllUser = async (req, res) => {
         // console.log(Number(search))
         queryObject.$or = [...userSearch];
     }
-    const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
+    if (role) {
+        queryObject.$or = [
+            {
+                role: { $regex: role, $options: "i" }
+            }
+        ];
+    }
+    const { limit, nPages, page, skip } = req.pagination;
+    // const page = Number(req.query.page) || 1;
+    // const limit = Number(req.query.limit) || 20;
+    // const skip = (page - 1) * limit;
     // testing
     const totalUsers = await userModel.countDocuments(queryObject);
     const allLogististics = 8;
     const users = await userModel.aggregate([
         {
-            $match: {},
+            $match: {
+                ...queryObject,
+            },
         },
         {
             $lookup: {
@@ -110,7 +121,8 @@ export const getAllUser = async (req, res) => {
     //   })
     //   .skip(skip)
     //   .limit(limit);
-    const numberOfPage = Math.ceil(totalUsers / limit);
+    const numberOfPage = nPages(totalUsers);
+    // Math.ceil(totalUsers / limit);
     res.status(200).json({ users, numberOfPage, limit, currentPage: page });
 };
 export const getStaticUser = async (req, res) => {
