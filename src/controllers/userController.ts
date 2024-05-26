@@ -1,5 +1,8 @@
 import { StatusCodes } from "http-status-codes";
-import { UnauthenticatedError } from "../errors/customErrors.js";
+import {
+  BadRequestError,
+  UnauthenticatedError,
+} from "../errors/customErrors.js";
 import { MiddlewareFn } from "../interfaces/expresstype.js";
 import userModel from "../models/userModel.js";
 import { sanitizeUser } from "../utils/tokenUtils.js";
@@ -36,19 +39,10 @@ export const getAllUser: MiddlewareFn = async (req, res): Promise<void> => {
     queryObject.$or = [...userSearch];
   }
   if (role) {
-    queryObject.$or = [
-      {
-        role: { $regex: role, $options: "i" }
-      }
-    ];
-  
+    queryObject.role = { $regex: role, $options: "i" }
   }
 
   const { limit, nPages, page, skip } = req.pagination;
-  // const page = Number(req.query.page) || 1;
-  // const limit = Number(req.query.limit) || 20;
-  // const skip = (page - 1) * limit;
-  // testing
 
   const totalUsers = await userModel.countDocuments(queryObject);
   const allLogististics = 8;
@@ -130,8 +124,8 @@ export const getAllUser: MiddlewareFn = async (req, res): Promise<void> => {
   //   })
   //   .skip(skip)
   //   .limit(limit);
-  const numberOfPage = nPages(totalUsers)
-  
+  const numberOfPage = nPages(totalUsers);
+
   // Math.ceil(totalUsers / limit);
 
   res.status(200).json({ users, numberOfPage, limit, currentPage: page });
@@ -151,4 +145,14 @@ export const getStaticUser: MiddlewareFn = async (req, res) => {
   };
   // console.log("this is the login user", Iuser, user);
   res.status(StatusCodes.OK).json({ user: Iuser });
+};
+export const updateUser: MiddlewareFn = async (req, res) => {
+  const newUser = { ...req.body };
+  delete newUser.password;
+  const updatedUser = await userModel.findOneAndUpdate(
+    { userId: req.user.userId },
+    { ...newUser }
+  );
+  if (!updatedUser) throw new BadRequestError("fail to update user profile");
+  res.status(StatusCodes.OK).json({ msg: "update user" });
 };

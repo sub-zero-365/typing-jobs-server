@@ -1,6 +1,8 @@
 import "express-async-errors";
 import * as dotenv from "dotenv";
 dotenv.config({ path: "./.env" });
+const isProduction = process.env.NODE_ENV == "production";
+
 import express from "express";
 import Database from "./connections/db.js";
 import errorHandlerMiddleware from "./middleware/errorHandlerMiddleware.js";
@@ -12,6 +14,7 @@ import cors from "cors";
 import { authenticateUser } from "./middleware/authMiddleware.js";
 import userRouter from "./routes/userRouter.js";
 import taskRouter from "./routes/taskRouter.js";
+import { MONGODB_OPTIONS } from "./utils/constant.js";
 const app = express();
 app.use(express.json());
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -41,17 +44,9 @@ app.use("/api/v1/tasks", taskRouter);
 
 const PORT = process.env.PORT;
 const db = new Database({
-  options: {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    autoIndex: false, // Don't build indexes
-    maxPoolSize: 10, // Maintain up to 10 socket connections
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-    family: 4, // Use IPv4, skip trying IPv6
-    // useFindAndModify: false
-  },
-  uri: process.env.MONGO_URL,
+  options: MONGODB_OPTIONS,
+  uri:!isProduction?process.env.MONGO_URL:process.env.MONGO_URL_PRODUCTION,
+
 });
 app.use("*", async (_req, res) => {
   res.status(404).send("routes not found 404");

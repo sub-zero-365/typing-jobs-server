@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { UnauthenticatedError } from "../errors/customErrors.js";
+import { BadRequestError, UnauthenticatedError, } from "../errors/customErrors.js";
 import userModel from "../models/userModel.js";
 import { sanitizeUser } from "../utils/tokenUtils.js";
 // import logisticModel from "../models/logisticModel.js";
@@ -33,11 +33,7 @@ export const getAllUser = async (req, res) => {
         queryObject.$or = [...userSearch];
     }
     if (role) {
-        queryObject.$or = [
-            {
-                role: { $regex: role, $options: "i" }
-            }
-        ];
+        queryObject.role = { $regex: role, $options: "i" };
     }
     const { limit, nPages, page, skip } = req.pagination;
     // const page = Number(req.query.page) || 1;
@@ -140,5 +136,13 @@ export const getStaticUser = async (req, res) => {
     };
     // console.log("this is the login user", Iuser, user);
     res.status(StatusCodes.OK).json({ user: Iuser });
+};
+export const updateUser = async (req, res) => {
+    const newUser = { ...req.body };
+    delete newUser.password;
+    const updatedUser = await userModel.findOneAndUpdate({ userId: req.user.userId }, { ...newUser });
+    if (!updatedUser)
+        throw new BadRequestError("fail to update user profile");
+    res.status(StatusCodes.OK).json({ msg: "update user" });
 };
 //# sourceMappingURL=userController.js.map
