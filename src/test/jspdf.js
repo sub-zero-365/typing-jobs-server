@@ -5,7 +5,7 @@ import fs from "fs"
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const filepath = path.resolve(__dirname, "./logo.png");
+const filepath = path.resolve(__dirname, "../../public/logo.png");
 function generateInvoice() {
     const customerNames = ["John Doe", "Jane Smith", "Alice Walker"];
     const productNames = ["Laptop", "Phone", "Headphones"];
@@ -44,13 +44,15 @@ const invoice = generateInvoice();
 async function createInvoicePDF(invoice) {
     const WIDTH = 10, HEIGHT = 10, OFFSET = 14
     let format = 'PNG'
-    var imgData = await fs.readFileSync(filepath).toString('base64');
+    // var imgData = await fs.readFileSync(filepath).toString('base64');
+    const imgData = fs.readFileSync(filepath, { encoding: 'base64' });
+    const imgDataUrl = `data:image/png;base64,${imgData}`;
     const doc = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
     });
-    doc.addImage(imgData, format, OFFSET, 0, WIDTH, HEIGHT)
+    doc.addImage(imgDataUrl, format, OFFSET, 0, WIDTH, HEIGHT)
     const bgColor = [40, 31, 51];
     doc.setFontSize(15);
     doc.setTextColor("red")
