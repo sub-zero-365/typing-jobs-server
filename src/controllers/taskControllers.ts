@@ -11,6 +11,7 @@ import Task from "../models/taskModel.js";
 import userModel from "../models/userModel.js";
 import { USER_ROLES } from "../utils/constant.js";
 import { generateUniqueCharacter } from "../utils/generateRandomNumbers.js";
+import { createInvoicePDF, invoice } from "../utils/generateInvoice.js";
 
 export const createTasks: MiddlewareFn = async (req, res) => {
   const { userId, role } = req.user;
@@ -178,7 +179,7 @@ export const updateTask: MiddlewareFn = async (req, res) => {
     success: true,
   });
 };
-export const showStats = async (req, res) => {
+export const showStats:MiddlewareFn = async (req, res) => {
   const { userId, role } = req.user;
   let _user_id: number | null = null;
 
@@ -259,3 +260,10 @@ export const showStats = async (req, res) => {
     nHits: total,
   });
 };
+export const generateInvoice: MiddlewareFn = async (req, res) => {
+  // thanks to blackbox ai chat 
+  const pdfData =await createInvoicePDF(invoice);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", "inline; filename=invoice.pdf");
+  res.send(pdfData);
+  };

@@ -7,6 +7,7 @@ import {
   getStaticTask,
   updateTask,
   showStats,
+  generateInvoice,
 } from "../controllers/taskControllers.js";
 import {
   authenticateUser,
@@ -37,4 +38,5 @@ router.get(
   authorizePermissions("admin", "user"),
   showStats
 );
+router.get("/generate-invoice/:id", generateInvoice);
 export default router;

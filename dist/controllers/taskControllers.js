@@ -6,6 +6,7 @@ import Task from "../models/taskModel.js";
 import userModel from "../models/userModel.js";
 import { USER_ROLES } from "../utils/constant.js";
 import { generateUniqueCharacter } from "../utils/generateRandomNumbers.js";
+import { createInvoicePDF, invoice } from "../utils/generateInvoice.js";
 export const createTasks = async (req, res) => {
     const { userId, role } = req.user;
     const user = await userModel.findOne({
@@ -234,5 +235,12 @@ export const showStats = async (req, res) => {
         defaultStats,
         nHits: total,
     });
+};
+export const generateInvoice = async (req, res) => {
+    // thanks to blackbox ai chat 
+    const pdfData = await createInvoicePDF(invoice);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", "inline; filename=invoice.pdf");
+    res.send(pdfData);
 };
 //# sourceMappingURL=taskControllers.js.map

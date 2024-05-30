@@ -41,6 +41,10 @@
     "@types/mongoose": "^5.11.97",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "googleapis": "^137.1.0",
+    "image-data-uri": "^2.0.1",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "nodemailer": "^6.9.13",
     "zod": "^3.22.4"
   }

@@ -14,6 +14,8 @@ import cors from "cors";
 import { authenticateUser } from "./middleware/authMiddleware.js";
 import userRouter from "./routes/userRouter.js";
 import taskRouter from "./routes/taskRouter.js";
+import pdfDocumentRouter from "./routes/pdfDocumentRouter.js"
+import editRouter from "./routes/editRouter.js"
 import { MONGODB_OPTIONS } from "./utils/constant.js";
 const app = express();
 app.use(express.json());
@@ -30,17 +32,18 @@ app.use(
 app.use(
   "/public",
   express.static(
-    // path.resolve(__dirname, "./dist/public/index.js")
     filepath
   )
 );
 app.get("/hello-world", (_, res) => {
   res.send("hello world from app ");
 });
-
+// routes definition here 
 app.use(`/api/v1/auth`, authRouter);
 app.use(`/api/v1/users`, authenticateUser, userRouter);
 app.use("/api/v1/tasks", taskRouter);
+app.use("/api/v1/pdfdocument", pdfDocumentRouter);
+app.use("/api/v1/edits", editRouter);
 
 const PORT = process.env.PORT;
 const db = new Database({

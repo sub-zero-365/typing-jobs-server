@@ -36,10 +36,6 @@ export const getAllUser = async (req, res) => {
         queryObject.role = { $regex: role, $options: "i" };
     }
     const { limit, nPages, page, skip } = req.pagination;
-    // const page = Number(req.query.page) || 1;
-    // const limit = Number(req.query.limit) || 20;
-    // const skip = (page - 1) * limit;
-    // testing
     const totalUsers = await userModel.countDocuments(queryObject);
     const allLogististics = 8;
     const users = await userModel.aggregate([
