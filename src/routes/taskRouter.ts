@@ -29,13 +29,13 @@ router.delete("/delete/:id", authenticateUser, deleteTask);
 router.patch(
   "/update/:tracking_number",
   authenticateUser,
-  authorizePermissions("user", "admin"),
+  authorizePermissions("user", "admin","employee","employee"),
   updateTask
 );
 router.get(
   "/stats",
   authenticateUser,
-  authorizePermissions("admin", "user"),
+  authorizePermissions("admin", "user","employee"),
   showStats
 );
 router.get("/generate-invoice/:id", generateInvoice);

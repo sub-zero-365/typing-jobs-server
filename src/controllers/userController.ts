@@ -70,6 +70,7 @@ export const getAllUser: MiddlewareFn = async (req, res): Promise<void> => {
         // password: '$2a$10$t5rlJy0PBhtTtABcRJYw.Ouuxiv.akN8zB4sMIQ7t40J1LwsHd8ji',
         role: 1,
         isVerified: 1,
+        phoneNumber:1,
         // percentage: {
         //   $cond: [
         //     { $eq: ["$total", 0] }, 1, {

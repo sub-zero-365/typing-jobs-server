@@ -31,6 +31,6 @@ const EditSchema = new mongoose.Schema(
     versionKey: false,
   }
 );
-
+EditSchema.index({ _id: 1 }, { unique: true });
 const Edit = mongoose.model("Edit", EditSchema);
 export default Edit;

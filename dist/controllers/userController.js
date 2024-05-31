@@ -62,6 +62,7 @@ export const getAllUser = async (req, res) => {
                 // password: '$2a$10$t5rlJy0PBhtTtABcRJYw.Ouuxiv.akN8zB4sMIQ7t40J1LwsHd8ji',
                 role: 1,
                 isVerified: 1,
+                phoneNumber: 1,
                 // percentage: {
                 //   $cond: [
                 //     { $eq: ["$total", 0] }, 1, {
@@ -122,15 +123,12 @@ export const getStaticUser = async (req, res) => {
     const userId = req.params.userId;
     const user = await userModel.findOne({ userId });
     if (!user)
-        throw new UnauthenticatedError(`
-  couldnot found user with id ${userId}
-  `);
+        throw new UnauthenticatedError(`couldnot found user with id ${userId}`);
     let Iuser = sanitizeUser(user);
     Iuser = {
         ...Iuser,
         fullname: Iuser.name,
     };
-    // console.log("this is the login user", Iuser, user);
     res.status(StatusCodes.OK).json({ user: Iuser });
 };
 export const updateUser = async (req, res) => {

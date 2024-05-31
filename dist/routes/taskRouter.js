@@ -9,8 +9,8 @@ router.post("/new", authenticateUser, authorizePermissions(USER_ROLES.user, USER
 router.get("/all", authenticateUser, paginationMiddleware, getTasks);
 router.get("/", getStaticTask);
 router.delete("/delete/:id", authenticateUser, deleteTask);
-router.patch("/update/:tracking_number", authenticateUser, authorizePermissions("user", "admin"), updateTask);
-router.get("/stats", authenticateUser, authorizePermissions("admin", "user"), showStats);
+router.patch("/update/:tracking_number", authenticateUser, authorizePermissions("user", "admin", "employee", "employee"), updateTask);
+router.get("/stats", authenticateUser, authorizePermissions("admin", "user", "employee"), showStats);
 router.get("/generate-invoice/:id", generateInvoice);
 export default router;
 //# sourceMappingURL=taskRouter.js.map

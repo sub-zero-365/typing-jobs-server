@@ -25,6 +25,7 @@ const EditSchema = new mongoose.Schema({
     timestamps: true,
     versionKey: false,
 });
+EditSchema.index({ _id: 1 }, { unique: true });
 const Edit = mongoose.model("Edit", EditSchema);
 export default Edit;
 //# sourceMappingURL=editModel.js.map
