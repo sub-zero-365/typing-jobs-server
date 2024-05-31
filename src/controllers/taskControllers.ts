@@ -182,19 +182,13 @@ export const updateTask: MiddlewareFn = async (req, res) => {
 export const showStats:MiddlewareFn = async (req, res) => {
   const { userId, role } = req.user;
   let _user_id: number | null = null;
-
   if (role == USER_ROLES.admin && req.query.userId) {
     console.log("enter here", req.query.userId, userId);
-    //admin requesting info
     _user_id = Number(req.query.userId);
   } else {
-    //user requesting info
     _user_id = userId;
   }
-  console.log("_user_id outsie", _user_id);
-  // const queryObject: any = {
-  //   "createdBy.userId": _user_id,
-  // };
+  
   const total = await Task.countDocuments({
     "createdBy.userId": _user_id,
   });

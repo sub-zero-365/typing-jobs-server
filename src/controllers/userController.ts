@@ -135,15 +135,12 @@ export const getStaticUser: MiddlewareFn = async (req, res) => {
   const userId = req.params.userId;
   const user = await userModel.findOne({ userId });
   if (!user)
-    throw new UnauthenticatedError(`
-  couldnot found user with id ${userId}
-  `);
+    throw new UnauthenticatedError(`couldnot found user with id ${userId}`);
   let Iuser = sanitizeUser(user);
   Iuser = {
     ...Iuser,
     fullname: Iuser.name,
   };
-  // console.log("this is the login user", Iuser, user);
   res.status(StatusCodes.OK).json({ user: Iuser });
 };
 export const updateUser: MiddlewareFn = async (req, res) => {
