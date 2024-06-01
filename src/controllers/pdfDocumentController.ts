@@ -1,12 +1,19 @@
 import { StatusCodes } from "http-status-codes";
 import { BadRequestError, NotFoundError } from "../errors/customErrors.js";
 import { MiddlewareFn } from "../interfaces/expresstype.js";
-import PDFDocument from "../models/documentModel.js";
+import PDFDocument, { iPDFDocumentModel } from "../models/documentModel.js";
 import Edit from "../models/editModel.js";
 import { generateKey, generateKeySync } from "crypto";
-import userModel from "../models/userModel.js";
+import userModel, { IUserModel } from "../models/userModel.js";
 import mongoose from "mongoose";
 import { transporter } from "../utils/sendMailUtils.js";
+import { isProduction } from "../utils/cookieUtils.js";
+import { USER_ROLES } from "../utils/constant.js";
+// import { IUserModel } from '../models/User';
+
+interface AuthenticatedRequest extends Request {
+  user?: IUserModel;
+}
 
 export const editPdfDocument: MiddlewareFn = async (req, res) => {
   const userId = req?.user?.userId;
@@ -59,7 +66,7 @@ export const editPdfDocument: MiddlewareFn = async (req, res) => {
   if (!pdfEdit) throw new BadRequestError("fail to create a pdf document");
   pdfDocument.edits.push(pdfEdit._id);
   await pdfDocument.save();
-  
+
   res.status(StatusCodes.CREATED).json({ msg: true });
 };
 
@@ -134,7 +141,9 @@ export const createPdfDocument: MiddlewareFn = async (req, res) => {
         </div>
       `,
     };
-    await transporter.sendMail(mailOptions);
+    if (isProduction) {
+      await transporter.sendMail(mailOptions);
+    }
     res.status(StatusCodes.CREATED).json({ msg: "success" });
   } catch (err) {
     console.error("Email send error:", err);
@@ -212,6 +221,101 @@ export const getStaticPdfDocument: MiddlewareFn = async (req, res) => {
   res.status(StatusCodes.OK).json({ pdfDocument: pdfDocument[0], edits: [] });
 };
 export const getAllPdfDocuments: MiddlewareFn = async (req, res) => {
-  const pdfDocuments = await PDFDocument.find();
-  res.status(StatusCodes.OK).json({ pdfDocuments });
+  try {
+    const { page = 1, limit = 10, date } = req.query;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+    let documents: iPDFDocumentModel[] = [];
+    let totalDocuments = 0;
+    console.log("this is the user role here", userRole);
+    const query: any = {};
+
+    if (
+      userRole !== "admin" &&
+      userRole !== "employee" &&
+      userId !== undefined
+    ) {
+      query["createdBy.userId"] = userId;
+    }
+
+    if (date) {
+      const [start, end] = (date as string)
+        .split(",")
+        .map((d) => d.split("=")[1].trim());
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        query.createdAt = {
+          $gte: startDate,
+          $lte: endDate,
+        };
+      } else {
+        throw new BadRequestError("Invalid date format");
+        //  res.status(400).json({ message: "Invalid date format" });
+      }
+    }
+
+    documents = await PDFDocument.find(query)
+      .skip((+page - 1) * +limit)
+      .limit(+limit)
+      .exec();
+    // console.log(documents, "pdf docs");
+    totalDocuments = await PDFDocument.countDocuments(query);
+    console.log("query here", query);
+    res.status(200).json({
+      totalDocuments,
+      totalPages: Math.ceil(totalDocuments / +limit),
+      currentPage: +page,
+      pdfDocuments: documents,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error });
+  }
+};
+export const showStats: MiddlewareFn = async (req, res) => {
+  try {
+    const { userId, role } = req.user;
+    let userFilter: any = { "createdBy.userId": userId };
+
+    if ((role == "admin" || role == "employee") && req.query.userId) {
+      userFilter["createdBy.userId"] = Number(req.query.userId);
+    }
+
+    const totalPdfDocs = await PDFDocument.countDocuments();
+
+    const docStats = await PDFDocument.aggregate([
+      // { $match: userFilter },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    type Type = {
+      [key in "uploaded" | "in-progress" | "completed"]: number;
+    };
+    console.log("this is docs stats", docStats);
+    const formattedStats: Type = docStats.reduce((acc: any, curr: any) => {
+      acc[curr._id] = curr.count;
+      return acc;
+    }, {});
+
+    const defaultStats: Type = {
+      "in-progress": formattedStats["in-progress"] || 0,
+      completed: formattedStats.completed || 0,
+      uploaded: formattedStats.uploaded || 0,
+    };
+
+    res.status(StatusCodes.OK).json({
+      defaultStats,
+      totalPdfDocs,
+    });
+  } catch (error) {
+    console.error("Error fetching user task stats:", error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Server Error" });
+  }
 };

@@ -6,6 +6,7 @@ import { generateKeySync } from "crypto";
 import userModel from "../models/userModel.js";
 import mongoose from "mongoose";
 import { transporter } from "../utils/sendMailUtils.js";
+import { isProduction } from "../utils/cookieUtils.js";
 export const editPdfDocument = async (req, res) => {
     const userId = req?.user?.userId;
     const user = await userModel.findOne({ userId });
@@ -132,7 +133,9 @@ export const createPdfDocument = async (req, res) => {
         </div>
       `,
         };
-        await transporter.sendMail(mailOptions);
+        if (isProduction) {
+            await transporter.sendMail(mailOptions);
+        }
         res.status(StatusCodes.CREATED).json({ msg: "success" });
     }
     catch (err) {
@@ -209,7 +212,91 @@ export const getStaticPdfDocument = async (req, res) => {
     res.status(StatusCodes.OK).json({ pdfDocument: pdfDocument[0], edits: [] });
 };
 export const getAllPdfDocuments = async (req, res) => {
-    const pdfDocuments = await PDFDocument.find();
-    res.status(StatusCodes.OK).json({ pdfDocuments });
+    try {
+        const { page = 1, limit = 10, date } = req.query;
+        const userId = req.user?.userId;
+        const userRole = req.user?.role;
+        let documents = [];
+        let totalDocuments = 0;
+        console.log("this is the user role here", userRole);
+        const query = {};
+        if (userRole !== "admin" &&
+            userRole !== "employee" &&
+            userId !== undefined) {
+            query["createdBy.userId"] = userId;
+        }
+        if (date) {
+            const [start, end] = date
+                .split(",")
+                .map((d) => d.split("=")[1].trim());
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+                query.createdAt = {
+                    $gte: startDate,
+                    $lte: endDate,
+                };
+            }
+            else {
+                throw new BadRequestError("Invalid date format");
+                //  res.status(400).json({ message: "Invalid date format" });
+            }
+        }
+        documents = await PDFDocument.find(query)
+            .skip((+page - 1) * +limit)
+            .limit(+limit)
+            .exec();
+        // console.log(documents, "pdf docs");
+        totalDocuments = await PDFDocument.countDocuments(query);
+        console.log("query here", query);
+        res.status(200).json({
+            totalDocuments,
+            totalPages: Math.ceil(totalDocuments / +limit),
+            currentPage: +page,
+            pdfDocuments: documents,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Server Error", error });
+    }
+};
+export const showStats = async (req, res) => {
+    try {
+        const { userId, role } = req.user;
+        let userFilter = { "createdBy.userId": userId };
+        if ((role == "admin" || role == "employee") && req.query.userId) {
+            userFilter["createdBy.userId"] = Number(req.query.userId);
+        }
+        const totalPdfDocs = await PDFDocument.countDocuments();
+        const docStats = await PDFDocument.aggregate([
+            // { $match: userFilter },
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+        console.log("this is docs stats", docStats);
+        const formattedStats = docStats.reduce((acc, curr) => {
+            acc[curr._id] = curr.count;
+            return acc;
+        }, {});
+        const defaultStats = {
+            "in-progress": formattedStats["in-progress"] || 0,
+            completed: formattedStats.completed || 0,
+            uploaded: formattedStats.uploaded || 0,
+        };
+        res.status(StatusCodes.OK).json({
+            defaultStats,
+            totalPdfDocs,
+        });
+    }
+    catch (error) {
+        console.error("Error fetching user task stats:", error);
+        res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: "Server Error" });
+    }
 };
 //# sourceMappingURL=pdfDocumentController.js.map

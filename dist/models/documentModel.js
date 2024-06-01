@@ -27,6 +27,9 @@ const PDFSchema = new mongoose.Schema({
             ref: "Edit",
         },
     ],
+}, {
+    timestamps: true,
+    versionKey: false,
 });
 const PDFDocument = mongoose.model("PDFDocument", PDFSchema);
 export default PDFDocument;

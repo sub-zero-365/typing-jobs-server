@@ -150,7 +150,7 @@ export const deleteTask = async (req, res) => {
 };
 export const updateTask = async (req, res) => {
     // const {} = req.body;
-    //   need lots of code here 
+    //   need lots of code here
     const task_id = req.params.task_id;
     const tasks = await Task.findOneAndUpdate({
         task_id: task_id,
@@ -164,74 +164,45 @@ export const updateTask = async (req, res) => {
     });
 };
 export const showStats = async (req, res) => {
-    const { userId, role } = req.user;
-    let _user_id = null;
-    if (role == USER_ROLES.admin && req.query.userId) {
-        console.log("enter here", req.query.userId, userId);
-        _user_id = Number(req.query.userId);
-    }
-    else {
-        _user_id = userId;
-    }
-    const total = await Task.countDocuments({
-        "createdBy.userId": _user_id,
-    });
-    let stats = await Task.aggregate([
-        { $match: { "createdBy.userId": _user_id } },
-        {
-            $group: {
-                _id: "$status",
-                count: { $sum: 1 },
+    try {
+        const { userId, role } = req.user;
+        let userFilter = { "createdBy.userId": userId };
+        if (role === USER_ROLES.admin && req.query.userId) {
+            userFilter["createdBy.userId"] = Number(req.query.userId);
+        }
+        const totalTasks = await Task.countDocuments(userFilter);
+        const taskStats = await Task.aggregate([
+            { $match: userFilter },
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 },
+                },
             },
-        },
-    ]);
-    console.log("this is the user query here ,", stats);
-    stats = stats.reduce((acc, curr) => {
-        const { _id: title, count } = curr;
-        acc[title] = count;
-        return acc;
-    }, {});
-    // stats=stat.reduce
-    console.log("this is the reduce stat here", stats, "total", total);
-    const defaultStats = {
-        pending: stats.pending || 0,
-        recieved: stats.recieved || 0,
-        sent: stats.sent || 0,
-    };
-    // console.log(defaultStats, "default stats");
-    // let monthlyApplications = await Job.aggregate([
-    //   { $match: { createdBy: new mongoose.Types.ObjectId(req.user.userId) } },
-    //   {
-    //     $group: {
-    //       _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
-    //       count: { $sum: 1 },
-    //     },
-    //   },
-    //   { $sort: { "_id.year": -1, "_id.month": -1 } },
-    //   { $limit: 6 },
-    // ]);
-    // console.log("this  multiplication stats here", monthlyApplications);
-    // monthlyApplications = monthlyApplications
-    //   .map((item) => {
-    //     const {
-    //       _id: { year, month },
-    //       count,
-    //     } = item;
-    //     const date = day()
-    //       .month(month - 1)
-    //       .year(year)
-    //       .format("MMM YY");
-    //     return { date, count };
-    //   })
-    //   .reverse();
-    // console.log("this is the multiplicatio data here", monthlyApplications);
-    res.status(StatusCodes.OK).json({
-        defaultStats,
-        nHits: total,
-    });
+        ]);
+        const formattedStats = taskStats.reduce((acc, curr) => {
+            acc[curr._id] = curr.count;
+            return acc;
+        }, {});
+        const defaultStats = {
+            pending: formattedStats.pending || 0,
+            received: formattedStats.received || 0,
+            sent: formattedStats.sent || 0,
+        };
+        res.status(StatusCodes.OK).json({
+            defaultStats,
+            totalTasks,
+        });
+    }
+    catch (error) {
+        console.error("Error fetching user task stats:", error);
+        res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .json({ message: "Server Error" });
+    }
 };
 export const generateInvoice = async (req, res) => {
-    // thanks to blackbox ai chat 
+    // thanks to blackbox ai chat
     const pdfData = await createInvoicePDF(invoice);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", "inline; filename=invoice.pdf");

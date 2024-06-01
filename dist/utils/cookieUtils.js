@@ -1,4 +1,4 @@
-const isProduction = process.env.NODE_ENV == "production";
+export const isProduction = process.env.NODE_ENV == "production";
 export const setCookies = (time = null) => {
     const obj = {
         httpOnly: isProduction,

@@ -2,12 +2,34 @@ import Edit from "../models/editModel.js";
 import { BadRequestError } from "../errors/customErrors.js";
 import { StatusCodes } from "http-status-codes";
 export const getAllRelatedEdit = async (req, res) => {
-    const { id } = req.params;
-    const edits = await Edit.find({
-        pdfId: id,
-    });
-    console.log("this is edits", edits);
-    res.status(StatusCodes.OK).json({ edits });
+    try {
+        const page = req.query.page || "1";
+        const limit = req.query.limit || "1";
+        const pdfId = req.params.id;
+        const pageNumber = parseInt(page, 10);
+        const limitNumber = parseInt(limit, 10);
+        const query = {};
+        if (pdfId) {
+            query.pdfId = pdfId;
+        }
+        const edits = await Edit.find(query)
+            .sort({ createdAt: -1 }) // Sort in ascending order based on createdAt
+            .skip((pageNumber - 1) * limitNumber)
+            .limit(limitNumber)
+            .exec();
+        const totalEdits = await Edit.countDocuments(query);
+        const nHits = await Edit.countDocuments({ pdfId: req.params.id });
+        res.status(200).json({
+            totalEdits,
+            totalPages: Math.ceil(totalEdits / limitNumber),
+            currentPage: pageNumber,
+            edits,
+            nHits
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Server Error", error });
+    }
 };
 export const getStaticEdit = async (req, res, next) => {
     const id = req.params.id;

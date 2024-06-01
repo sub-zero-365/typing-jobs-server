@@ -4,6 +4,7 @@ import {
   editPdfDocument,
   getAllPdfDocuments,
   getStaticPdfDocument,
+  showStats,
 } from "../controllers/pdfDocumentController.js";
 import {
   authenticateUser,
@@ -18,12 +19,21 @@ router.post(
   createPdfDocument
 );
 router.post(
-  "/new/guess",//un protected route for guess users
+  "/new/guess", //un protected route for guess users
   createPdfDocument
 );
-
-
-router.get("/", getAllPdfDocuments);
+router.get(
+  "/stats",
+  authenticateUser,
+  authorizePermissions("admin", "employee", "user"),
+  showStats
+);
+router.get(
+  "/",
+  authenticateUser,
+  authorizePermissions("admin", "employee", "user"),
+  getAllPdfDocuments
+);
 router
   .route("/:id")
   .get(

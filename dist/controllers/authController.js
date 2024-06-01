@@ -56,15 +56,26 @@ export const register = async (req, res) => {
         },
         to: emailsList,
         subject: "OTP Confirmation - EASY GOODS & SERVICES",
-        text: `Hello ${user.name},\n\n.Thank you for creating at account with us`,
-        html: `<h1 style="text-align:center;margin-bottom:1rem"><b>Hi ${user.name},</b></h1>
-    <h1 style="text-align:center;margin-bottom:1rem"><b>Welcome to EASY GOODS & SERVICES </b></h1>
-         <p style="text-align:center;font-weight:700">To proceed further with yiur registration process please enter the OTP.</p>
-         <p style="text-align:center;font-weight:300;margin-bottom:1rem">Your Email verification OTP is </p>
-         <span style="display: block;padding:1rem;width:fit;margin:1rem auto">${req.body.otp.value} </span>
-         <p style="text-align:center;font-weight:300;margin-bottom:1rem">Please note this otp will only be valid for 30minutes</p>
-         
-      `,
+        text: `Hello ${user.name},\n\nThank you for creating an account with us. To proceed further with your registration process, please enter the OTP: ${req.body.otp.value}. Please note, this OTP will only be valid for 30 minutes.`,
+        html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; text-align: center;">
+        <h1 style="color: #4CAF50; margin-bottom: 1rem;"><b>Hi ${user.name},</b></h1>
+        <h1 style="color: #4CAF50; margin-bottom: 1rem;"><b>Welcome to EASY GOODS & SERVICES</b></h1>
+        <p style="font-weight: 700; font-size: 1.2rem; color: #333;">To proceed further with your registration process, please enter the OTP below.</p>
+        <p style="font-weight: 300; font-size: 1rem; color: #555;">Your Email Verification OTP is:</p>
+        <div style="padding: 10px 20px; background-color: #f2f2f2; border: 1px solid #ddd; display: inline-block; margin-bottom: 1rem;">
+          <span style="font-size: 1.5rem; font-weight: bold; color: #333;">${req.body.otp.value}</span>
+        </div>
+        <p style="font-weight: 300; font-size: 1rem; color: #555;">Please note, this OTP will only be valid for 30 minutes.</p>
+        <div style="margin-top: 20px;">
+          <a href="https://example.com/verify" style="background: #4CAF50; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Now</a>
+        </div>
+        <p style="font-size: 1rem; color: #777; margin-top: 20px;">
+          Best regards,<br>
+          The EASY GOODS & SERVICES Team
+        </p>
+      </div>
+    `,
     };
     try {
         await transporter.sendMail(mailOptions);
