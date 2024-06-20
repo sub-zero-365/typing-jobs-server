@@ -48,7 +48,7 @@ app.use("/api/v1/edits", editRouter);
 const PORT = process.env.PORT;
 const db = new Database({
   options: MONGODB_OPTIONS,
-  uri:!isProduction?process.env.MONGO_URL:process.env.MONGO_URL_PRODUCTION,
+  uri:process.env.MONGO_URL_PRODUCTION,
 
 });
 app.use("*", async (_req, res) => {

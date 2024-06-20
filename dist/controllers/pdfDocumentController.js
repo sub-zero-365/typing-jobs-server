@@ -7,6 +7,7 @@ import userModel from "../models/userModel.js";
 import mongoose from "mongoose";
 import { transporter } from "../utils/sendMailUtils.js";
 import { isProduction } from "../utils/cookieUtils.js";
+import dayjs from "dayjs";
 export const editPdfDocument = async (req, res) => {
     const userId = req?.user?.userId;
     const user = await userModel.findOne({ userId });
@@ -212,64 +213,68 @@ export const getStaticPdfDocument = async (req, res) => {
     res.status(StatusCodes.OK).json({ pdfDocument: pdfDocument[0], edits: [] });
 };
 export const getAllPdfDocuments = async (req, res) => {
-    try {
-        const { page = 1, limit = 10, date } = req.query;
-        const userId = req.user?.userId;
-        const userRole = req.user?.role;
-        let documents = [];
-        let totalDocuments = 0;
-        console.log("this is the user role here", userRole);
-        const query = {};
-        if (userRole !== "admin" &&
-            userRole !== "employee" &&
-            userId !== undefined) {
-            query["createdBy.userId"] = userId;
-        }
-        if (date) {
-            const [start, end] = date
-                .split(",")
-                .map((d) => d.split("=")[1].trim());
-            const startDate = new Date(start);
-            const endDate = new Date(end);
-            if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-                query.createdAt = {
-                    $gte: startDate,
-                    $lte: endDate,
-                };
-            }
-            else {
-                throw new BadRequestError("Invalid date format");
-                //  res.status(400).json({ message: "Invalid date format" });
-            }
-        }
-        documents = await PDFDocument.find(query)
-            .skip((+page - 1) * +limit)
-            .limit(+limit)
-            .exec();
-        // console.log(documents, "pdf docs");
-        totalDocuments = await PDFDocument.countDocuments(query);
-        console.log("query here", query);
-        res.status(200).json({
-            totalDocuments,
-            totalPages: Math.ceil(totalDocuments / +limit),
-            currentPage: +page,
-            pdfDocuments: documents,
-        });
+    function parseDateRange(date) {
+        const [start, end] = decodeURIComponent(date)
+            .split(",")
+            .map((d) => d.split("=")[1].trim());
+        const startDate = dayjs(start).isValid() ? new Date(start) : null;
+        const endDate = dayjs(end).isValid() ? new Date(end) : null;
+        return { startDate, endDate };
     }
-    catch (error) {
-        res.status(500).json({ message: "Server Error", error });
+    const { page = 1, limit = 10, date } = req.query;
+    const userId = req.user?.userId;
+    const userRole = req.user?.role;
+    let documents = [];
+    let totalDocuments = 0;
+    console.log("this is the user role here", userRole);
+    const query = {};
+    if (userRole !== "admin" &&
+        userRole !== "employee" &&
+        userId !== undefined) {
+        query["createdBy.userId"] = userId;
     }
+    if (date) {
+        const { startDate, endDate } = parseDateRange(date);
+        query.createdAt = {};
+        if (startDate) {
+            query.createdAt["$gte"] = startDate;
+        }
+        if (endDate) {
+            query.createdAt["$lte"] = endDate;
+        }
+        console.log("query obj here", startDate, endDate, query);
+    }
+    console.log("query here outside", query);
+    documents = await PDFDocument.find(query)
+        .skip((+page - 1) * +limit)
+        .limit(+limit)
+        .exec();
+    totalDocuments = await PDFDocument.countDocuments(query);
+    res.status(200).json({
+        totalDocuments,
+        totalPages: Math.ceil(totalDocuments / +limit),
+        currentPage: +page,
+        pdfDocuments: documents,
+    });
+    // }
+    //  catch (error) {
+    //   throw new InternalServerError("something bad happpen")
+    //   // res.status(500).json({ message: "Server Error", error });
+    // }
 };
 export const showStats = async (req, res) => {
     try {
         const { userId, role } = req.user;
-        let userFilter = { "createdBy.userId": userId };
+        let userFilter = {};
+        // some comments
         if ((role == "admin" || role == "employee") && req.query.userId) {
             userFilter["createdBy.userId"] = Number(req.query.userId);
         }
-        const totalPdfDocs = await PDFDocument.countDocuments();
+        if (role == "user")
+            userFilter["createdBy.userId"] = userId;
+        const totalPdfDocs = await PDFDocument.countDocuments(userFilter);
         const docStats = await PDFDocument.aggregate([
-            // { $match: userFilter },
+            { $match: userFilter },
             {
                 $group: {
                     _id: "$status",

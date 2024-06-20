@@ -7,7 +7,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc && node dist/server.js",
-    "startDev": "tsc -w && nodemon dist/server.js"
+    "startDev": "nodemon",
+    "start-client": "cd ../typing-jobs && npm run dev",
+     "dev":"concurrently --kill-others-on-fail \"npm run startDev\" \"npm run start-client\""
+
   },
   "keywords": [],
   "author": "",
@@ -16,7 +19,7 @@
     "@types/node": "^20.12.7",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.37.3",
-    "concurrently": "^8.0.1",
+    "concurrently": "^8.2.2",
     "cookie-parser": "^1.4.6",
     "datauri": "^4.1.0",
     "dayjs": "^1.11.10",

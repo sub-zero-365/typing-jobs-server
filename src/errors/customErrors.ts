@@ -32,3 +32,11 @@ export class UnauthorizedError extends Error {
     this.statusCode = StatusCodes.FORBIDDEN;
   }
 }
+export class InternalServerError extends Error {
+  statusCode: number;
+  constructor(message: string) {
+    super(message);
+    this.name = "InternalServerError";
+    this.statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
+  }
+}
